@@ -161,6 +161,13 @@ def create_object(game, position):
 ### auxiliar functions ###
 
 
+def _clean_sentence(sentence):
+    stopwords = ['the', 'a', 'an', 'at', 'of', 'to', 'in', 'on']
+    words = sentence.lower().split()
+    clean_words = [word for word in words if word not in stopwords]
+    return ' '.join(clean_words)
+
+
 def _list_exits_from(game, position):
     exits = game["entities"][position]["exits"]
     return sorted(exits.keys())
@@ -316,7 +323,7 @@ if __name__ == '__main__':
 
     # main game loop
     while game['entities']['player']['alive']:
-        sentence = input("What do you want to do? ")
+        sentence = _clean_sentence(input("What do you want to do? "))
         verb, *objects = sentence.split()
         function = VERB_TO_FUNCTION.get(
             verb, lambda key: print("I don't understand that."))
