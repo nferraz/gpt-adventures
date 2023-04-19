@@ -231,6 +231,8 @@ def drop(game, obj_name):
     entities = game['entities']
     player_position = entities['player']['position']
 
+    object_to_handle = None
+
     for key, value in entities.items():
         if value.get('type') == 'object' and value.get(
                 'name') == obj_name and value.get('position') == 'player':
