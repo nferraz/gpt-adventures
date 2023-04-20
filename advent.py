@@ -279,8 +279,7 @@ def go(game, direction):
     print(_long_description(game, new_position))
 
 
-def look(game):
-    player_position = game['entities']['player']['position']
+def _look_around(game, player_position):
     objects = _list_objects_in(game, player_position)
 
     print(_long_description(game, player_position))
@@ -294,6 +293,25 @@ def look(game):
 
     print("")
     print("Exits: ", "; ".join(_list_exits_from(game, player_position)))
+
+
+def _look_object(game, obj_name):
+    entities = game['entities']
+    player_position = entities['player']['position']
+
+    for obj_key in entities.keys():
+        if entities[obj_key].get('name') == obj_name and (
+                entities[obj_key]['position'] ==
+                player_position or entities[obj_key]['position'] == 'player'):
+            print(_long_description(game, obj_key))
+            break
+
+
+def look(game, obj_name=None):
+    if obj_name is None:
+        _look_around(game, game['entities']['player']['position'])
+    else:
+        _look_object(game, obj_name)
 
 
 def inventory(game):
@@ -320,7 +338,7 @@ if __name__ == '__main__':
     # define a dictionary to map verbs to functions
     VERB_TO_FUNCTION = {
         'quit': lambda game: exit(),
-        'look': lambda game: look(game),
+        'look': lambda game, *objects: look(game, *objects),
         'inventory': lambda game: inventory(game),
         'go': lambda game, direction: go(game, direction),
         'take': lambda game, obj_name: take(game, obj_name),
