@@ -100,6 +100,11 @@ def generate_world(game):
     game = _generate_content(prompt, 'game')
     game["entities"][game["entities"]["player"]["position"]]["seen"] = True
 
+    for key in game['entities']:
+        entity = game['entities'][key]
+        if entity.get('name'):
+            entity['name'] = entity['name'].lower()
+
     return game
 
 
