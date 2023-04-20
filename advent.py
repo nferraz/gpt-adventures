@@ -352,7 +352,8 @@ if __name__ == '__main__':
         sentence = _clean_sentence(input("What do you want to do? "))
         verb, *objects = sentence.split()
         function = VERB_TO_FUNCTION.get(
-            verb, lambda key: print("I don't understand that."))
+            verb, lambda key, *objects: print("I don't understand that."))
+
         try:
             function(game, *objects)
         except Exception as e:
