@@ -48,7 +48,9 @@ GAME_TEMPLATE = {
     },
 }
 
+
 ### AI text generation ###
+
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 
@@ -63,7 +65,11 @@ def _generate_content(prompt, str_type):
     )
     print("# Done!")
 
-    data = json.loads(res.choices[0].text)
+    try:
+        data = json.loads(res.choices[0].text)
+    except BaseException:
+        print(res.choices[0].text)
+        raise
 
     if (len(data) == 1):
         # LLM returned a nested dict with only one key;
@@ -158,6 +164,7 @@ def create_object(game, position):
 
     return data
 
+
 ### auxiliar functions ###
 
 
@@ -198,6 +205,7 @@ def _short_description(game, entity_name):
 
 def _long_description(game, entity_name):
     return game["entities"][entity_name]["long_description"]
+
 
 ### game actions ###
 
