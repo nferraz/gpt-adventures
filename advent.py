@@ -56,14 +56,13 @@ openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 
 def _generate_content(prompt, str_type):
-    print(f"# Generating {str_type} data, please wait...")
+    print(f"# Generating {str_type}...")
     res = openai.Completion.create(
         engine="text-davinci-003",
         prompt=dedent(prompt).lstrip(),
         temperature=0.7,
         max_tokens=2000,
     )
-    print("# Done!")
 
     try:
         data = json.loads(res.choices[0].text)
@@ -163,6 +162,43 @@ def create_object(game, position):
     data = _generate_content(prompt, 'object')
 
     return data
+
+
+def magic_action(game, sentence):
+
+    game['output'] = '$short_action_description'
+
+    prompt = '''
+    You are a software agent. You will receive JSON and output JSON.
+
+    Given this json data structure that represents a text-adventure game:
+
+    {0}
+
+    The user typed the following command: "{1}"
+
+    Replace the "output" value with a description of the action result.
+
+    You don't have to please the player; consider the user class and
+    location as well the object properties to see if the action can be
+    performed.
+
+    Modify the object properties as necessary to reflect the changes.
+
+    Return the complete JSON data structure below.
+
+    OUTPUT:
+    '''.format(
+        json.dumps(game),
+        sentence)
+
+    game = _generate_content(prompt, 'action')
+
+    if 'output' in game:
+        print(game['output'])
+        del game['output']
+
+    return game
 
 
 ### auxiliar functions ###
@@ -351,8 +387,13 @@ if __name__ == '__main__':
     while game['entities']['player']['alive']:
         sentence = _clean_sentence(input("What do you want to do? "))
         verb, *objects = sentence.split()
-        function = VERB_TO_FUNCTION.get(
-            verb, lambda key, *objects: print("I don't understand that."))
+        function = VERB_TO_FUNCTION.get(verb, None)
+
+        if function is None:
+            # LLM magic!!!
+            game = magic_action(game, sentence)
+            print("")
+            continue
 
         try:
             function(game, *objects)
