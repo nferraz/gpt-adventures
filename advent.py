@@ -29,7 +29,7 @@ GAME_TEMPLATE = {
             'type': 'player',
             'class': '$class',
             'alive': True,
-            'position': '$location1_name',
+            'location': '$location1_name',
             'short_description': 'a $short_description',
             'long_description': 'You are $long_description',
         },
@@ -39,7 +39,7 @@ GAME_TEMPLATE = {
             'long_description': 'It\'s a $long_description',
             'name': '$single_word',
             'adjective': '$single_word',
-            'position': 'player',
+            'location': 'player',
         },
         {
             'type': 'object',
@@ -47,7 +47,7 @@ GAME_TEMPLATE = {
             'long_description': 'It\'s a $long_description',
             'name': '$single_word',
             'adjective': '$single_word',
-            'position': '$location1_name',
+            'location': '$location1_name',
         },
     ],
 }
@@ -119,9 +119,9 @@ def generate_world(game):
 
     player = _get_entity_by_type(game, "player")
 
-    # mark initial position as seen
-    player_position = _get_entity_by_name(game, player['position'])
-    player_position["seen"] = True
+    # mark initial location as seen
+    player_location = _get_entity_by_name(game, player['location'])
+    player_location["seen"] = True
 
     # make sure all object names are lowercase
     for entity in game['entities']:
@@ -131,7 +131,7 @@ def generate_world(game):
     return game
 
 
-def generate_position(game, position):
+def generate_location(game, location):
     prompt = '''
     You are a software agent. You will receive JSON and output JSON.
 
@@ -155,7 +155,7 @@ def generate_position(game, position):
 
     OUTPUT:
     '''.format(
-        position,
+        location,
         json.dumps(game))
 
     location = _generate_content(prompt, 'location')
@@ -164,12 +164,12 @@ def generate_position(game, position):
     return location
 
 
-def create_object(game, position):
+def create_object(game, location):
     prompt = '''
     You are a software agent. You will receive JSON and output JSON.
 
     Given this json data structure that represents a text-adventure game,
-    please create a new entity of type "object" in the position "{0}".
+    please create a new entity of type "object" in the location "{0}".
 
     Populate this new object with all necessary attributes, including a
     single-word name and rich descriptions, following the same atmosphere
@@ -184,7 +184,7 @@ def create_object(game, position):
 
     OUTPUT:
     '''.format(
-        position,
+        location,
         json.dumps(game))
 
     obj = _generate_content(prompt, 'object')
@@ -248,7 +248,7 @@ def _list_objects_in(game, location):
 
     objects_here = sorted([entity for entity in entities
                            if entity["type"] == "object" and entity
-                           ["position"] == location["name"]])
+                           ["location"] == location["name"]])
 
     return objects_here
 
@@ -274,61 +274,61 @@ def take(game, entity):
     player = _get_entity_by_type(game, 'player')
 
     if entity.get('type') != 'object' or entity.get(
-            'position') != player['position']:
+            'location') != player['location']:
         print("You can't take that.")
         return
 
-    entity['position'] = 'player'
+    entity['location'] = 'player'
     print("Taken!")
 
 
 def drop(game, entity):
     player = _get_entity_by_type(game, 'player')
 
-    if entity.get('type') != 'object' or entity.get('position') != 'player':
+    if entity.get('type') != 'object' or entity.get('location') != 'player':
         print("You can't drop that.")
         return
 
-    entity['position'] = player['position']
+    entity['location'] = player['location']
     print("Dropped!")
 
 
 def go(game, direction):
     player = _get_entity_by_type(game, 'player')
-    player_position = _get_entity_by_name(game, player['position'])
+    player_location = _get_entity_by_name(game, player['location'])
 
-    new_position_name = player_position['exits'].get(direction)
+    new_location_name = player_location['exits'].get(direction)
 
-    if new_position_name is None:
+    if new_location_name is None:
         print("You can't go there.")
         return
 
-    new_position = _get_entity_by_name(game, new_position_name)
+    new_location = _get_entity_by_name(game, new_location_name)
 
-    if new_position is None or len(new_position) == 0:
-        new_position = generate_position(game, new_position_name)
-        game['entities'].append(new_position)
+    if new_location is None or len(new_location) == 0:
+        new_location = generate_location(game, new_location_name)
+        game['entities'].append(new_location)
 
-    player['position'] = new_position_name
-    print(fill(new_position['long_description']))
+    player['location'] = new_location_name
+    print(fill(new_location['long_description']))
 
 
 
 def _look_around(game):
     player = _get_entity_by_type(game, 'player')
-    player_position = _get_entity_by_name(game, player['position'])
+    player_location = _get_entity_by_name(game, player['location'])
 
-    print(fill(player_position['long_description']))
+    print(fill(player_location['long_description']))
     print("I see here:")
 
-    if not player_position["seen"]:
+    if not player_location["seen"]:
         # special case: this room was just created
-        player_position["seen"] = True
-        new_object = create_object(game, player_position['name'])
+        player_location["seen"] = True
+        new_object = create_object(game, player_location['name'])
         if len(new_object):
             game['entities'].append(new_object)
 
-    objects_here = _list_objects_in(game, player_position)
+    objects_here = _list_objects_in(game, player_location)
 
     if objects_here:
         print("; ".join(obj['short_description'] for obj in objects_here))
@@ -336,7 +336,7 @@ def _look_around(game):
         print("Nothing special.")
 
     print("")
-    print("Exits: ", "; ".join(_list_exits_from(game, player_position)))
+    print("Exits: ", "; ".join(_list_exits_from(game, player_location)))
 
 
 def _look_object(game, obj):
@@ -345,8 +345,8 @@ def _look_object(game, obj):
 
     for e in entities:
         if e.get('name') == obj['name'] and (
-                e['position'] == player['position'] or
-                e['position'] == 'player'):
+                e['location'] == player['location'] or
+                e['location'] == 'player'):
             print(obj['long_description'])
             return
 
@@ -362,7 +362,7 @@ def look(game, obj=None):
 
 def inventory(game):
     objects = [e for e in game['entities'] if e['type']
-               == 'object' and e['position'] == 'player']
+               == 'object' and e['location'] == 'player']
 
     print("You are carrying:")
 
@@ -376,7 +376,7 @@ if __name__ == '__main__':
     game = generate_world(GAME_TEMPLATE)
 
     player = _get_entity_by_type(game, 'player')
-    current_location = _get_entity_by_name(game, player['position'])
+    current_location = _get_entity_by_name(game, player['location'])
 
     print(game['_title'])
     print("")
