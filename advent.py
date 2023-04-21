@@ -319,6 +319,7 @@ def _look_around(game):
     player_location = _get_entity_by_name(game, player['location'])
 
     print(fill(player_location['long_description']))
+    print("")
     print("I see here:")
 
     if not player_location["seen"]:
