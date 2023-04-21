@@ -6,7 +6,7 @@ import os
 import pdb
 
 from random import randint
-from textwrap import dedent
+from textwrap import dedent, fill
 
 GAME_TEMPLATE = {
     '_title': '$game_title',
@@ -223,7 +223,7 @@ def magic_action(game, sentence):
     game = _generate_content(prompt, 'action')
 
     if 'output' in game:
-        print(game['output'])
+        print(fill(game['output']))
         del game['output']
 
     return game
@@ -310,14 +310,15 @@ def go(game, direction):
         game['entities'].append(new_position)
 
     player['position'] = new_position_name
-    print(new_position['long_description'])
+    print(fill(new_position['long_description']))
+
 
 
 def _look_around(game):
     player = _get_entity_by_type(game, 'player')
     player_position = _get_entity_by_name(game, player['position'])
 
-    print(player_position['long_description'])
+    print(fill(player_position['long_description']))
     print("I see here:")
 
     if not player_position["seen"]:
@@ -347,7 +348,7 @@ def _look_object(game, obj):
                 e['position'] == player['position'] or
                 e['position'] == 'player'):
             print(obj['long_description'])
-            break
+            return
 
     print("I can't see that.")
 
@@ -379,9 +380,7 @@ if __name__ == '__main__':
 
     print(game['_title'])
     print("")
-    print(game['_plot'])
-    print("")
-    print(current_location['long_description'])
+    print(fill(game['_plot']))
 
     help()
 
@@ -402,6 +401,7 @@ if __name__ == '__main__':
     while player['alive']:
         sentence = input("What do you want to do? ")
         verb, *object_names = _clean_sentence(sentence).split()
+        print("")
 
         function = VERB_TO_FUNCTION.get(verb, None)
 
