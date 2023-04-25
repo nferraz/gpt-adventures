@@ -58,7 +58,12 @@ GAME_TEMPLATE = {
 
 def DEBUG(*msg):
     if os.environ.get('DEBUG'):
-        print(*msg)
+        print("\x1b[90m", *msg, "\x1b[0m")
+
+
+def DEBUG2(*msg):
+    if int(os.environ.get('DEBUG', '0')) > 1:
+        print("\x1b[90m", *msg, "\x1b[0m")
 
 
 def _get_entity_by_name(game, entity_name):
@@ -105,6 +110,8 @@ def _generate_content(prompt, str_type):
     print(f"# Generating {str_type}...")
     prompt = dedent(prompt).lstrip()
 
+    DEBUG2(prompt)
+
     json_str = None
     try:
         json_str = _completion(prompt)
@@ -114,6 +121,8 @@ def _generate_content(prompt, str_type):
 
     # fix malformed json
     json_str = re.sub(r',\s*}', '}', json_str)
+
+    DEBUG2(json_str)
 
     try:
         data = json.loads(json_str)
@@ -158,6 +167,8 @@ def generate_world(game):
 
 
 def generate_location(game, location):
+    player = _get_entity_by_type(game, "player")
+
     prompt = '''
     Given this json data structure that represents a text-adventure game,
     please create a new entity of type "location", named "{0}".
@@ -167,19 +178,20 @@ def generate_location(game, location):
     locations.
 
     At least one location in the game should have four exits (north,
-    south, east and west); and one exit should usually go back to the
-    previous location.
+    south, east and west); and each exit should have a distinct name.
+    One exit should usually go back to "{1}".
 
     Don't return the complete game JSON. Return the JSON for the data
     structure corresponding to the new entity.
 
     INPUT:
 
-    {1}
+    {2}
 
     OUTPUT (strict json):
     '''.format(
         location,
+        player['location'],
         json.dumps(game))
 
     location = _generate_content(prompt, 'location')
