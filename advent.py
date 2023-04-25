@@ -13,7 +13,7 @@ GPT_MODEL = os.environ.get('GPT_MODEL', 'gpt-3.5-turbo')
 
 GAME_TEMPLATE = {
     '_title': '$game_title',
-    '_theme': '$game_theme',
+    '_genre': '$game_genre',
     '_objective': '$game_objective',
     '_plot': '$game_plot',
     'entities': [
@@ -177,9 +177,10 @@ def generate_location(game, location):
     rich new descriptions, following the same atmosphere of the previous
     locations.
 
-    At least one location in the game should have four exits (north,
-    south, east and west); and each exit should have a distinct name.
-    One exit should usually go back to "{1}".
+    Most locations in the game should have at least two exits (usually
+    "north", "south", "east" or "west"; sometimes "up" or "down"); and
+    each exit should have a distinct name. One exit should go back to
+    "{1}".
 
     Don't return the complete game JSON. Return the JSON for the data
     structure corresponding to the new entity.
@@ -235,16 +236,28 @@ def magic_action(game, sentence):
 
     {0}
 
-    The user typed the following command: "{1}"
-
-    Replace the "output" value with a description of the action result.
+    The user typed the following command: "{1}".
 
     Consider the player class and the game context to see if the action
     can be performed.
 
+    Replace the "output" value with a description of the action result, and
+    modify the data structure reflecting any changes.
+
+    Some important points to consider:
+
+    1) Embrace creativity: Encourage your players to think outside the box
+    and reward them for their creativity.
+
+    2) While it's important to be flexible, it's also important to ensure
+    that the game world remains consistent.
+
+    3) Consider the consequences: Every action has consequences, both
+    intended and unintended.
+
     If the action can be performed, modify the game properties as
     necessary to reflect the changes caused by this action. You may
-    change the player, objects, or locations.
+    change player attributes, objects, and locations as necessary.
 
     No matter what, return the complete JSON data structure for the game
     including the "output" explaining what happened.
