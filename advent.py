@@ -4,9 +4,12 @@ import json
 import openai
 import os
 import pdb
+import re
 
 from random import randint
 from textwrap import dedent, fill
+
+GPT_MODEL = os.environ.get('GPT_MODEL', 'gpt-3.5-turbo')
 
 GAME_TEMPLATE = {
     '_title': '$game_title',
@@ -78,19 +81,44 @@ def _get_entity_by_type(game, entity_type):
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 
 
+def _completion(prompt):
+    if GPT_MODEL == 'text-davinci-003':
+        res = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=prompt,
+            max_tokens=2048,
+        )
+        return res.choices[0].text
+    elif GPT_MODEL == 'gpt-3.5-turbo':
+        res = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "system",
+                       "content":
+                       "You are a software agent. You output will be strict JSON, with no indentation."},
+                      {"role": "user", "content": prompt}],)
+        return res.choices[0].message.content
+    else:
+        raise Exception('Invalid GPT model')
+
+
 def _generate_content(prompt, str_type):
     print(f"# Generating {str_type}...")
-    res = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=dedent(prompt).lstrip(),
-        temperature=0.7,
-        max_tokens=2000,
-    )
+    prompt = dedent(prompt).lstrip()
+
+    json_str = None
+    try:
+        json_str = _completion(prompt)
+    except BaseException:
+        print(prompt)
+        raise
+
+    # fix malformed json
+    json_str = re.sub(r',\s*}', '}', json_str)
 
     try:
-        data = json.loads(res.choices[0].text)
+        data = json.loads(json_str)
     except BaseException:
-        print(res.choices[0].text)
+        print('Error parsing JSON: ' + json_str)
         raise
 
     return data
@@ -98,8 +126,6 @@ def _generate_content(prompt, str_type):
 
 def generate_world(game):
     prompt = """
-    You are a software agent. You will receive JSON and output JSON.
-
     Given this json data structure that represents a text-adventure game,
     please replace all variables starting with a dollar sign (`$`) with
     rich descriptions.
@@ -108,7 +134,7 @@ def generate_world(game):
 
     $json
 
-    OUTPUT:
+    OUTPUT (strict json):
     """
 
     json_str = json.dumps(game)
@@ -133,8 +159,6 @@ def generate_world(game):
 
 def generate_location(game, location):
     prompt = '''
-    You are a software agent. You will receive JSON and output JSON.
-
     Given this json data structure that represents a text-adventure game,
     please create a new entity of type "location", named "{0}".
 
@@ -153,7 +177,7 @@ def generate_location(game, location):
 
     {1}
 
-    OUTPUT:
+    OUTPUT (strict json):
     '''.format(
         location,
         json.dumps(game))
@@ -166,8 +190,6 @@ def generate_location(game, location):
 
 def create_object(game, location):
     prompt = '''
-    You are a software agent. You will receive JSON and output JSON.
-
     Given this json data structure that represents a text-adventure game,
     please create a new entity of type "object" in the location "{0}".
 
@@ -182,7 +204,7 @@ def create_object(game, location):
 
     {1}
 
-    OUTPUT:
+    OUTPUT (strict json):
     '''.format(
         location,
         json.dumps(game))
@@ -194,11 +216,9 @@ def create_object(game, location):
 
 def magic_action(game, sentence):
 
-    game['output'] = '$short_action_description'
+    game['output'] = '$output'
 
     prompt = '''
-    You are a software agent. You will receive JSON and output JSON.
-
     Given this json data structure that represents a text-adventure game:
 
     {0}
@@ -207,15 +227,17 @@ def magic_action(game, sentence):
 
     Replace the "output" value with a description of the action result.
 
-    You don't have to please the player; consider the user class and
-    location as well the object properties to see if the action can be
-    performed.
+    Consider the player class and the game context to see if the action
+    can be performed.
 
-    Modify the object properties as necessary to reflect the changes.
+    If the action can be performed, modify the game properties as
+    necessary to reflect the changes caused by this action. You may
+    change the player, objects, or locations.
 
-    Return the complete JSON data structure for the game.
+    No matter what, return the complete JSON data structure for the game
+    including the "output" explaining what happened.
 
-    OUTPUT:
+    OUTPUT (strict json):
     '''.format(
         json.dumps(game),
         sentence)
@@ -311,7 +333,6 @@ def go(game, direction):
 
     player['location'] = new_location_name
     print(fill(new_location['long_description']))
-
 
 
 def _look_around(game):
