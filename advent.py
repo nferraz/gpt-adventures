@@ -9,7 +9,7 @@ import re
 from random import randint
 from textwrap import dedent, fill
 
-GPT_MODEL = os.environ.get('GPT_MODEL', 'gpt-3.5-turbo')
+GPT_MODEL = os.environ.get('GPT_MODEL', 'text-davinci-003')
 
 GAME_TEMPLATE = {
     '_title': '$game_title',
