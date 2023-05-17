@@ -210,6 +210,8 @@ def create_object(game, location):
     single-word name and rich descriptions, following the same atmosphere
     of the game.
 
+    Make sure that the short description contains the object name.
+
     Don't return the complete game JSON. Return the JSON for the data
     structure corresponding to the new entity.
 
